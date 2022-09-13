@@ -12,7 +12,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 CHECKPOINT_DIR = './train/'
 LOG_DIR = './logs/'
 
-MODEL_NUM = 1
+MODEL_NUM = 2
 
 
 class ShowerEnv(Env):
@@ -70,13 +70,14 @@ class ShowerEnv(Env):
             done = False
 
         #fluctuate temperature
-        self.state += random.randint(-1,1)
+        if self.shower_length % 2 == 0:
+            self.state += random.randint(-1,1)
 
         #set info placeholder
         info = {}
 
-        #print info
-        self.printfunc(action)
+        #print
+        #self.printfunc(action)
 
         return self.state, reward, done, info
 
@@ -123,26 +124,31 @@ class TrainAndLoggingCallback(BaseCallback):
 
         return True
 
-callback = TrainAndLoggingCallback(check_freq=20000, save_path=CHECKPOINT_DIR)
+callback = TrainAndLoggingCallback(check_freq=10000, save_path=CHECKPOINT_DIR)
 
 
 #IMPLEMENT RL MODEL
 
 #new model
-model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=LOG_DIR, learning_rate=0.0000005, n_steps=512)
+#model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=LOG_DIR, learning_rate=0.001, n_steps=512)
 
 #load model
-#model = PPO.load('./train/best_model_1.zip')
+model = PPO.load('./train/best_model_1.zip')
 
 #train model
-model.learn(total_timesteps=100000, callback=callback)
+#model.learn(total_timesteps=1000000, callback=callback)
 
 
 #run model
 state = env.reset()
-while True:
+done = False
+culm_reward = 0
+while not done:
     action, _state = model.predict(state)
     state, reward, done, info = env.step(action)
+    culm_reward += reward
+
+print(f"DONE = REWARD TOTAL: {culm_reward}")
 
 
 
